@@ -13,8 +13,6 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.util.EntityUtils;
-import org.json.JSONArray;
-import org.json.JSONObject;
 
 import android.app.Activity;
 import android.os.Bundle;
@@ -174,7 +172,8 @@ public class MainActivity extends Activity implements OnClickListener {
 			}
 		}).start();
 	}
-
+	
+	// JSON解析
 	private void parseJSONWithGSON(String jsonData) {
 		Gson gson = new Gson();
 		List<AppModel> appList = gson.fromJson(jsonData, new TypeToken<List<AppModel>>() {}.getType());
@@ -182,23 +181,6 @@ public class MainActivity extends Activity implements OnClickListener {
 			Log.d("andli", "id is " 	 + app.getId());
 			Log.d("andli", "name is " 	 + app.getName());
 			Log.d("andli", "version is " + app.getVersion());
-		}
-	}
-
-	private void parseJSONWithJSONObject(String jsonData) {
-		try {
-			JSONArray jsonArray = new JSONArray(jsonData);
-			for (int i = 0; i < jsonArray.length(); i++) {
-				JSONObject jsonObject = jsonArray.getJSONObject(i);
-				String id = jsonObject.getString("id");
-				String name = jsonObject.getString("name");
-				String version = jsonObject.getString("version");
-				Log.d("MainActivity", "id is " + id);
-				Log.d("MainActivity", "name is " + name);
-				Log.d("MainActivity", "version is " + version);
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
 		}
 	}
 }
