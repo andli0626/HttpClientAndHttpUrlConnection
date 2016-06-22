@@ -26,6 +26,7 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -34,6 +35,7 @@ public class MainActivity extends Activity implements OnClickListener {
 
 	public static final int SHOW_RESPONSE1 = 1;
 	public static final int SHOW_RESPONSE2 = 2;
+	public static final int SHOW_RESPONSE3 = 3;
 
 	private Button sendRequest1;
 	private Button sendRequest2;
@@ -45,11 +47,20 @@ public class MainActivity extends Activity implements OnClickListener {
 		public void handleMessage(Message msg) {
 			switch (msg.what) {
 			case SHOW_RESPONSE1:
+				Toast.makeText(MainActivity.this, "请求成功!", Toast.LENGTH_SHORT).show();
 				String response1 = (String) msg.obj;
 				responseText.setText(Html.fromHtml(response1));
+				break;
 			case SHOW_RESPONSE2:
+				Toast.makeText(MainActivity.this, "请求成功!", Toast.LENGTH_SHORT).show();
 				String response2 = (String) msg.obj;
 				responseText.setText(response2);
+				break;
+			case SHOW_RESPONSE3:
+				responseText.setText("请求失败!");
+				break;
+			default:
+				break;
 			}
 		}
 
@@ -80,7 +91,7 @@ public class MainActivity extends Activity implements OnClickListener {
 		}
 	}
 
-	// 发送HttpClient请求
+	// 发送HttpClient请求:GET(不推荐使用--Android开发团队已经不在维护该库了)
 	private void sendRequestWithHttpClient() {
 		new Thread(new Runnable() {
 			@Override
@@ -110,7 +121,7 @@ public class MainActivity extends Activity implements OnClickListener {
 		}).start();
 	}
 
-	// 发送HttpURLConnection请求
+	// 发送HttpURLConnection请求:GET
 	private void sendRequestWithHttpURLConnection() {
 		// 开启线程来发起网络请求
 		new Thread(new Runnable() {
@@ -118,28 +129,44 @@ public class MainActivity extends Activity implements OnClickListener {
 			public void run() {
 				HttpURLConnection connection = null;
 				try {
-					URL url = new URL("http://www.baidu.com");
+					// 获得URL对象
+					URL url = new URL("http://www.baidu.com/");
+					// 获得HttpURLConnection对象
 					connection = (HttpURLConnection) url.openConnection();
+					// 默认为GET请求
 					connection.setRequestMethod("GET");
+					// 设置 链接 超时时间
 					connection.setConnectTimeout(8000);
+					// 设置 读取 超时时间
 					connection.setReadTimeout(8000);
+					// 设置是否从HttpURLConnection读入，默认为true
 					connection.setDoInput(true);
 					connection.setDoOutput(true);
-					InputStream in = connection.getInputStream();
-					// 下面对获取到的输入流进行读取
-					BufferedReader reader  = new BufferedReader(new InputStreamReader(in));
-					StringBuilder response = new StringBuilder();
-					String line;
-					while ((line = reader.readLine()) != null) {
-						response.append(line);
+					
+					// 请求相应码是否为200（OK）
+					if(connection.getResponseCode() == HttpURLConnection.HTTP_OK){
+						// 下面对获取到的输入流进行读取
+						InputStream in          = connection.getInputStream();
+						BufferedReader reader   = new BufferedReader(new InputStreamReader(in));
+						StringBuilder  response = new StringBuilder();
+						String line;
+						while ((line = reader.readLine()) != null) {
+							response.append(line);
+						}
+						Message message = new Message();
+						message.what 	= SHOW_RESPONSE1;
+						message.obj 	= response.toString();
+						handler.sendMessage(message);
+					}else{
+						Message message = new Message();
+						message.what 	= SHOW_RESPONSE3;
+						handler.sendMessage(message);
 					}
-					Message message = new Message();
-					message.what 	= SHOW_RESPONSE1;
-					message.obj 	= response.toString();
-					handler.sendMessage(message);
+					
 				} catch (Exception e) {
 					e.printStackTrace();
 				} finally {
+					// 关闭连接
 					if (connection != null) {
 						connection.disconnect();
 					}
