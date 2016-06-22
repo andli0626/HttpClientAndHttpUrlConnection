@@ -29,6 +29,12 @@ import android.widget.Toast;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
+/**
+ * 
+ * @author andli
+ * @date 2016年6月22日 下午2:48:37
+ * @annotation 简单的HttpURLConnection和HttpClient GET请求
+ */
 public class MainActivity extends Activity implements OnClickListener {
 
 	public static final int SHOW_RESPONSE1 = 1;
