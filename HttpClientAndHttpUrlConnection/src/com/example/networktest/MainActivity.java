@@ -3,12 +3,9 @@ package com.example.networktest;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.StringReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.List;
-
-import javax.xml.parsers.SAXParserFactory;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -18,29 +15,28 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.util.EntityUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.xml.sax.InputSource;
-import org.xml.sax.XMLReader;
-import org.xmlpull.v1.XmlPullParser;
-import org.xmlpull.v1.XmlPullParserFactory;
-
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 
 import android.app.Activity;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.text.Html;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.TextView;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+
 public class MainActivity extends Activity implements OnClickListener {
 
-	public static final int SHOW_RESPONSE = 0;
+	public static final int SHOW_RESPONSE1 = 1;
+	public static final int SHOW_RESPONSE2 = 2;
 
-	private Button sendRequest;
+	private Button sendRequest1;
+	private Button sendRequest2;
 
 	private TextView responseText;
 
@@ -48,10 +44,12 @@ public class MainActivity extends Activity implements OnClickListener {
 
 		public void handleMessage(Message msg) {
 			switch (msg.what) {
-			case SHOW_RESPONSE:
-				String response = (String) msg.obj;
-				// 在这里进行UI操作，将结果显示到界面上
-				responseText.setText(response);
+			case SHOW_RESPONSE1:
+				String response1 = (String) msg.obj;
+				responseText.setText(Html.fromHtml(response1));
+			case SHOW_RESPONSE2:
+				String response2 = (String) msg.obj;
+				responseText.setText(response2);
 			}
 		}
 
@@ -61,18 +59,28 @@ public class MainActivity extends Activity implements OnClickListener {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
-		sendRequest = (Button) findViewById(R.id.send_request);
-		responseText = (TextView) findViewById(R.id.response_text);
-		sendRequest.setOnClickListener(this);
+		
+		sendRequest1  = (Button)   findViewById(R.id.send_request1);
+		sendRequest2  = (Button)   findViewById(R.id.send_request2);
+		
+		responseText  = (TextView) findViewById(R.id.response_text);
+		
+		sendRequest1.setOnClickListener(this);
+		sendRequest2.setOnClickListener(this);
 	}
 
 	@Override
 	public void onClick(View v) {
-		if (v.getId() == R.id.send_request) {
+		if (v.getId() == R.id.send_request1) {
+			responseText.setText("");
+			sendRequestWithHttpURLConnection();
+		}else if (v.getId() == R.id.send_request2) {
+			responseText.setText("");
 			sendRequestWithHttpClient();
 		}
 	}
 
+	// 发送HttpClient请求
 	private void sendRequestWithHttpClient() {
 		new Thread(new Runnable() {
 			@Override
@@ -80,21 +88,20 @@ public class MainActivity extends Activity implements OnClickListener {
 				try {
 					HttpClient httpClient = new DefaultHttpClient();
 					// 指定访问的服务器地址是电脑本机
-					HttpGet httpGet = new HttpGet("http://10.0.2.2/get_data.json");
+					// 注意：由于是本机测试，所以测试设备和接口必须在同一网段内，否则访问失败
+					HttpGet httpGet = new HttpGet("http://192.168.0.162:8082/get_data.json");
 					HttpResponse httpResponse = httpClient.execute(httpGet);
 					if (httpResponse.getStatusLine().getStatusCode() == 200) {
 						// 请求和响应都成功了
 						HttpEntity entity = httpResponse.getEntity();
 						String response = EntityUtils.toString(entity, "utf-8");
+						// 解析JSON
 						parseJSONWithGSON(response);
-						// parseJSONWithJSONObject(response);
-						// parseXMLWithPull(response);
-						// parseXMLWithSAX(response);
-						// Message message = new Message();
-						// message.what = SHOW_RESPONSE;
-						// // 将服务器返回的结果存放到Message中
-						// message.obj = response.toString();
-						// handler.sendMessage(message);
+						
+						 Message message = new Message();
+						 message.what    = SHOW_RESPONSE2;
+						 message.obj     = response.toString();
+						 handler.sendMessage(message);
 					}
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -103,6 +110,7 @@ public class MainActivity extends Activity implements OnClickListener {
 		}).start();
 	}
 
+	// 发送HttpURLConnection请求
 	private void sendRequestWithHttpURLConnection() {
 		// 开启线程来发起网络请求
 		new Thread(new Runnable() {
@@ -119,17 +127,15 @@ public class MainActivity extends Activity implements OnClickListener {
 					connection.setDoOutput(true);
 					InputStream in = connection.getInputStream();
 					// 下面对获取到的输入流进行读取
-					BufferedReader reader = new BufferedReader(
-							new InputStreamReader(in));
+					BufferedReader reader  = new BufferedReader(new InputStreamReader(in));
 					StringBuilder response = new StringBuilder();
 					String line;
 					while ((line = reader.readLine()) != null) {
 						response.append(line);
 					}
 					Message message = new Message();
-					message.what = SHOW_RESPONSE;
-					// 将服务器返回的结果存放到Message中
-					message.obj = response.toString();
+					message.what 	= SHOW_RESPONSE1;
+					message.obj 	= response.toString();
 					handler.sendMessage(message);
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -144,12 +150,11 @@ public class MainActivity extends Activity implements OnClickListener {
 
 	private void parseJSONWithGSON(String jsonData) {
 		Gson gson = new Gson();
-		List<App> appList = gson.fromJson(jsonData, new TypeToken<List<App>>() {
-		}.getType());
-		for (App app : appList) {
-			Log.d("MainActivity", "id is " + app.getId());
-			Log.d("MainActivity", "name is " + app.getName());
-			Log.d("MainActivity", "version is " + app.getVersion());
+		List<AppModel> appList = gson.fromJson(jsonData, new TypeToken<List<AppModel>>() {}.getType());
+		for (AppModel app : appList) {
+			Log.d("andli", "id is " 	 + app.getId());
+			Log.d("andli", "name is " 	 + app.getName());
+			Log.d("andli", "version is " + app.getVersion());
 		}
 	}
 
@@ -164,60 +169,6 @@ public class MainActivity extends Activity implements OnClickListener {
 				Log.d("MainActivity", "id is " + id);
 				Log.d("MainActivity", "name is " + name);
 				Log.d("MainActivity", "version is " + version);
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-
-	private void parseXMLWithSAX(String xmlData) {
-		try {
-			SAXParserFactory factory = SAXParserFactory.newInstance();
-			XMLReader xmlReader = factory.newSAXParser().getXMLReader();
-			ContentHandler handler = new ContentHandler();
-			xmlReader.setContentHandler(handler);
-			xmlReader.parse(new InputSource(new StringReader(xmlData)));
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-
-	private void parseXMLWithPull(String xmlData) {
-		try {
-			XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
-			XmlPullParser xmlPullParser = factory.newPullParser();
-			xmlPullParser.setInput(new StringReader(xmlData));
-			int eventType = xmlPullParser.getEventType();
-			String id = "";
-			String name = "";
-			String version = "";
-			while (eventType != XmlPullParser.END_DOCUMENT) {
-				String nodeName = xmlPullParser.getName();
-				switch (eventType) {
-				// 开始解析某个结点
-				case XmlPullParser.START_TAG: {
-					if ("id".equals(nodeName)) {
-						id = xmlPullParser.nextText();
-					} else if ("name".equals(nodeName)) {
-						name = xmlPullParser.nextText();
-					} else if ("version".equals(nodeName)) {
-						version = xmlPullParser.nextText();
-					}
-					break;
-				}
-				// 完成解析某个结点
-				case XmlPullParser.END_TAG: {
-					if ("app".equals(nodeName)) {
-						Log.d("MainActivity", "id is " + id);
-						Log.d("MainActivity", "name is " + name);
-						Log.d("MainActivity", "version is " + version);
-					}
-					break;
-				}
-				default:
-					break;
-				}
-				eventType = xmlPullParser.next();
 			}
 		} catch (Exception e) {
 			e.printStackTrace();

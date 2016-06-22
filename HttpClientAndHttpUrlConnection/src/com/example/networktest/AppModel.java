@@ -1,6 +1,6 @@
 package com.example.networktest;
 
-public class App {
+public class AppModel {
 
 	private String id;
 

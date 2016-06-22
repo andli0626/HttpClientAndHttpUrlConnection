@@ -4,10 +4,16 @@
     android:orientation="vertical" >
 
     <Button
-        android:id="@+id/send_request"
+        android:id="@+id/send_request1"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Send Request" />
+        android:text="发送HttpURLConnection请求" />
+
+    <Button
+        android:id="@+id/send_request2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="发送HttpClient请求" />
 
     <ScrollView
         android:layout_width="match_parent"
